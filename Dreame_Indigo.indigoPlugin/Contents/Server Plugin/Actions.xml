@@ -1,0 +1,227 @@
+<?xml version="1.0"?>
+<Actions>
+    <Action id="locate_vacuum" deviceFilter="self">
+        <Name>Locate Vacuum</Name>
+        <CallbackMethod>locate_vacuum</CallbackMethod>
+    </Action>
+
+    <Action id="set_fan_speed" deviceFilter="self">
+        <Name>Set Fan Speed</Name>
+        <CallbackMethod>set_fan_speed</CallbackMethod>
+        <ConfigUI>
+            <Field id="speed" type="menu">
+                <Label>Fan Speed:</Label>
+                <List>
+                    <Option value="Silent">Silent</Option>
+                    <Option value="Standard">Standard</Option>
+                    <Option value="Strong">Strong</Option>
+                    <Option value="Turbo">Turbo</Option>
+                </List>
+            </Field>
+        </ConfigUI>
+    </Action>
+    <Action id="start_shortcut" deviceFilter="self">
+        <Name>Start Shortcut (Favourite)</Name>
+        <CallbackMethod>start_shortcut</CallbackMethod>
+        <ConfigUI>
+            <Field id="shortcutMenu" type="menu">
+                <Label>Shortcut:</Label>
+                <List class="self" method="shortcut_menu" dynamicReload="true"/>
+            </Field>
+        </ConfigUI>
+    </Action>
+
+
+    <!-- Clean specific rooms (segments) -->
+    <Action id="clean_segments" deviceFilter="self">
+        <Name>Clean Selected Rooms (Segments)</Name>
+        <CallbackMethod>clean_segments</CallbackMethod>
+        <ConfigUI>
+            <Field id="segments" type="textfield">
+                <Label>Segment IDs (comma-separated):</Label>
+                <Description>Example: 2,3,5</Description>
+            </Field>
+            <Field id="repeats" type="textfield" defaultValue="1">
+                <Label>Repeats:</Label>
+                <Description>Number of times to clean these segments.</Description>
+            </Field>
+            <Field id="suction_level" type="textfield">
+                <Label>Suction level (enum or numeric):</Label>
+                <Description>Optional; leave blank to use current setting.</Description>
+            </Field>
+            <Field id="water_volume" type="textfield">
+                <Label>Water volume (enum or numeric):</Label>
+                <Description>Optional; leave blank to use current setting.</Description>
+            </Field>
+        </ConfigUI>
+    </Action>
+    <Action id="save_map_snapshot" deviceFilter="self">
+        <Name>Save Map Snapshot to Pictures</Name>
+        <CallbackMethod>save_map_snapshot</CallbackMethod>
+    </Action>
+        <Action id="save_wifi_map_snapshot" deviceFilter="self">
+        <Name>Save WiFi Map Snapshot</Name>
+        <CallbackMethod>save_wifi_map_snapshot</CallbackMethod>
+    </Action>
+        <Action id="export_map_resources" hidden="true">
+        <Name>Export Map Resources (PNG/Fonts)</Name>
+        <CallbackMethod>export_map_resources</CallbackMethod>
+    </Action>
+
+          <Field id="battDeviceId" type="menu" defaultValue="">
+        <Label>Battery Device:</Label>
+        <List class="self" method="battery_device_list" dynamicReload="true"/>
+        <CallbackMethod>battery_device_changed</CallbackMethod>
+      </Field>
+    <!-- Basic vacuum controls -->
+    <Action id="start_clean" deviceFilter="self">
+        <Name>Start Cleaning</Name>
+        <CallbackMethod>start_clean</CallbackMethod>
+    </Action>
+
+    <Action id="start_pause" deviceFilter="self">
+        <Name>Start / Pause</Name>
+        <CallbackMethod>start_pause</CallbackMethod>
+    </Action>
+
+    <Action id="stop_clean" deviceFilter="self">
+        <Name>Stop Cleaning</Name>
+        <CallbackMethod>stop_clean</CallbackMethod>
+    </Action>
+
+    <Action id="pause_clean" deviceFilter="self">
+        <Name>Pause Cleaning</Name>
+        <CallbackMethod>pause_clean</CallbackMethod>
+    </Action>
+
+    <Action id="return_to_base" deviceFilter="self">
+        <Name>Return to Base</Name>
+        <CallbackMethod>return_to_base_action</CallbackMethod>
+    </Action>
+        <Action id="clean_room" deviceFilter="self">
+        <Name>Clean Room</Name>
+        <CallbackMethod>clean_room</CallbackMethod>
+        <ConfigUI>
+            <Field id="roomMenu" type="menu">
+                <Label>Room to clean:</Label>
+                <List class="self" method="room_menu" dynamicReload="true"/>
+                <!-- dynamic list built by Plugin.room_menu(values_dict, type_id, dev_id) -->
+            </Field>
+            <Field id="repeats" type="textfield" defaultValue="1">
+                <Label>Repeats:</Label>
+                <Description>Number of times to clean the selected room.</Description>
+            </Field>
+        </ConfigUI>
+    </Action>
+    <!-- Clean rectangular zones -->
+    <Action id="clean_zones" deviceFilter="self">
+        <Name>Clean Zone(s)</Name>
+        <CallbackMethod>clean_zones</CallbackMethod>
+        <ConfigUI>
+            <Field id="zones" type="textfield">
+                <Label>Zones (rectangles):</Label>
+                <Description>Format: x1,y1,x2,y2; x1,y1,x2,y2; ... (robot coords)</Description>
+            </Field>
+            <Field id="repeats" type="textfield" defaultValue="1">
+                <Label>Repeats:</Label>
+            </Field>
+        </ConfigUI>
+    </Action>
+
+        <!-- Custom Cleaning for a single room (segment) -->
+    <!-- Custom Cleaning for a single room (segment) -->
+    <Action id="custom_clean_room" deviceFilter="self">
+        <Name>Custom Clean Room</Name>
+        <CallbackMethod>custom_clean_room</CallbackMethod>
+        <ConfigUI>
+            <!-- Room selection: re-use dynamic room_menu -->
+            <Field id="roomMenu" type="menu">
+                <Label>Room:</Label>
+                <List class="self" method="room_menu" dynamicReload="true"/>
+            </Field>
+
+            <!-- Suction level – map to common Dreame levels -->
+            <Field id="suction_level" type="menu" defaultValue="standard">
+                <Label>Suction Level:</Label>
+                <List>
+                    <!-- values are intentionally lowercase; plugin passes them through -->
+                    <Option value="quiet">Quiet</Option>
+                    <Option value="standard">Standard</Option>
+                    <Option value="strong">Strong</Option>
+                    <Option value="turbo">Turbo</Option>
+                </List>
+            </Field>
+
+            <!-- Water volume – typical 1..3 (or 0..3 depending on model); keep it simple -->
+            <Field id="water_volume" type="menu" defaultValue="2">
+                <Label>Water Volume:</Label>
+                <List>
+                    <Option value="1">Low</Option>
+                    <Option value="2">Medium</Option>
+                    <Option value="3">High</Option>
+                </List>
+            </Field>
+
+            <!-- Repeats – small menu instead of free text -->
+            <Field id="repeats" type="menu" defaultValue="1">
+                <Label>Repeats:</Label>
+                <List>
+                    <Option value="1">1</Option>
+                    <Option value="2">2</Option>
+                    <Option value="3">3</Option>
+                </List>
+            </Field>
+
+            <!-- Cleaning mode – simple, optional menu -->
+            <Field id="cleaning_mode" type="menu" defaultValue="">
+                <Label>Cleaning Mode (optional):</Label>
+                <List>
+                    <Option value="">(Device default)</Option>
+                    <Option value="sweep">Vacuum only</Option>
+                    <Option value="mop">Mop only</Option>
+                    <Option value="sweep_mop">Vacuum and mop</Option>
+                </List>
+            </Field>
+
+            <!-- Wetness level – typical 1..3 -->
+            <Field id="wetness_level" type="menu" defaultValue="">
+                <Label>Wetness Level (optional):</Label>
+                <List>
+                    <Option value="">(Device default)</Option>
+                    <Option value="1">Low</Option>
+                    <Option value="2">Medium</Option>
+                    <Option value="3">High</Option>
+                </List>
+            </Field>
+        </ConfigUI>
+    </Action>
+        <Action id="start_washing" deviceFilter="self">>
+        <Name>Start Washing (Base)</Name>
+        <CallbackMethod>start_washing</CallbackMethod>
+    </Action>
+    <Action id="pause_washing" deviceFilter="self">>
+        <Name>Pause Washing (Base)</Name>
+        <CallbackMethod>pause_washing</CallbackMethod>
+
+    </Action>
+    <Action id="start_drying" deviceFilter="self">
+        <Name>Start Drying (Base)</Name>
+        <CallbackMethod>start_drying</CallbackMethod>
+
+    </Action>
+    <Action id="stop_drying" deviceFilter="self">
+        <Name>Stop Drying (Base)</Name>
+        <CallbackMethod>stop_drying</CallbackMethod>
+
+    </Action>
+    <Action id="start_draining" deviceFilter="self">
+        <Name>Start Draining (Base)</Name>
+        <CallbackMethod>start_draining</CallbackMethod>
+        <ConfigUI>
+            <Field id="cleanWaterTank" type="checkbox">
+                <Label>Also empty clean water tank (if supported)</Label>
+            </Field>
+        </ConfigUI>
+    </Action>
+
+</Actions>

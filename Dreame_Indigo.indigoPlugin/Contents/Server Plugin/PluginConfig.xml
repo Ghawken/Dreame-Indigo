@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+<PluginConfig>
+    <SupportURL>https://wiki.indigodomo.com/</SupportURL>
+
+    <Field id="infoLabel0" type="label" fontSize="large" fontColor="blue">
+        <Label>⚪️⚪️ Dreame Vacuum Indigo Plugin ⚪️⚪️</Label>
+    </Field>
+    <Field id="author" type="label" fontColor="black">
+        <Label>Developed by: GlennNZ</Label>
+    </Field>
+
+    <Field id="about" type="label" fontColor="blue" fontSize="small">
+        <Label>Connects Dreame robot vacuums and exposes states and actions in Indigo.</Label>
+    </Field>
+
+    <Field id="showDebugInfo" type="checkbox" defaultValue="false">
+        <Label>Show library debug logging in Indigo</Label>
+    </Field>
+
+    <Field id="description" type="label" fontColor="blue" fontSize="small">
+        <Label>When enabled, Dreame / Dreame client / Miio library messages will also be written
+to the Indigo Event Log at debug level. When disabled, library logs are only
+written to the plugin log file and are hidden from the Indigo Event Log.
+        </Label>
+    </Field>
+
+    <Field id="showDebugLevel" type="menu" defaultValue="20">
+        <Label>Indigo Log Debug level:</Label>
+        <Description>Level of debug information in Indigo Event Log.</Description>
+        <List>
+            <Option value="5">Detailed Debugging Messages</Option>
+            <Option value="10">Debugging Messages</Option>
+            <Option value="20">Informational Messages</Option>
+            <Option value="30">Warning Messages</Option>
+            <Option value="40">Error Messages</Option>
+            <Option value="50">Critical Errors Only</Option>
+        </List>
+    </Field>
+
+    <Field id="showDebugFileLevel" type="menu" defaultValue="5">
+        <Label>File Debug level:</Label>
+        <Description>Level of debug information saved to plugin log file.</Description>
+        <List>
+            <Option value="5">Detailed Debugging Messages</Option>
+            <Option value="10">Debugging Messages</Option>
+            <Option value="20">Informational Messages</Option>
+            <Option value="30">Warning Messages</Option>
+            <Option value="40">Error Messages</Option>
+            <Option value="50">Critical Errors Only</Option>
+        </List>
+    </Field>
+</PluginConfig>

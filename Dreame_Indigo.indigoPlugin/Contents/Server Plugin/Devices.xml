@@ -1,0 +1,381 @@
+<?xml version="1.0"?>
+<Devices>
+    <Device type="relay" id="dreame_vacuum">
+        <Name>⚪️️ Dreame Vacuum</Name>
+        <ConfigUI>
+            <Field id="loginMode" type="menu" defaultValue="cloud">
+                <Label>Login Mode:</Label>
+                <List>
+                    <Option value="cloud">Cloud (Mi/Dreame/Mova Account)</Option>
+                    <Option value="local">Local (IP + token)</Option>
+                </List>
+            </Field>
+            <Field id="description_3" type="label" fontColor="blue" fontSize="small" visibleBindingId="loginMode" visibleBindingValue="local">
+            <Label>It seems local is essentially disabled on all new devices, without custom firmware.
+        </Label>
+            </Field>
+            <Field id="accountType" type="menu" defaultValue="dreame" visibleBindingId="loginMode" visibleBindingValue="cloud">
+                <Label>Cloud Account Type</Label>
+                <List>
+                    <!-- values must match what dreame.protocol expects (normalized in plugin.py) -->
+                    <Option value="dreame">Dreame account</Option>
+                    <Option value="mihome">Xiaomi / Mi Home account</Option>
+                    <Option value="mova">MovaHome account</Option>
+                </List>
+            </Field>
+            <Field id="description_2" type="label" fontColor="blue" fontSize="small" visibleBindingId="loginMode" visibleBindingValue="cloud"  alwaysUseInDialogHeightCalc="true">
+        <Label>Dreame: direct Dreame cloud account.
+Xiaomi / Mi Home: use your Mi account (supports 2FA/captcha via dreame library).
+MovaHome: uses the Mova-specific Dreame cloud endpoints.
+        </Label>
+    </Field>
+            <!-- Cloud creds -->
+            <Field id="username" type="textfield">
+                <Label>Account Email / Username (cloud mode):</Label>
+            </Field>
+            <Field id="password" type="textfield" secure="true">
+                <Label>Password (cloud mode):</Label>
+            </Field>
+            <Field id="country" type="textfield" defaultValue="eu">
+                <Label>Country Code (e.g. eu, us, cn, sg):</Label>
+            </Field>
+
+            <!-- Local creds -->
+            <Field id="host" type="textfield" visibleBindingId="loginMode" visibleBindingValue="local">
+                <Label>Local IP / Host (local mode):</Label>
+            </Field>
+            <Field id="token" type="textfield" visibleBindingId="loginMode" visibleBindingValue="local">
+                <Label>Local device token (local mode):</Label>
+            </Field>
+
+            <Field id="dreame_device_id" type="textfield">
+                <Label>Specific Device ID (optional):</Label>
+                <Description>Leave blank to use first Dreame vacuum on the account.</Description>
+            </Field>
+
+
+    <Field id="sep4454aa" type="separator"/>
+
+ <!-- 2FA / cloud login helper (Mi Home-style, Apple 2FA pattern) -->
+
+            <Field id="dreameTwoFAEnabled" type="checkbox" tooltip="" default="false" visibleBindingId="accountType" visibleBindingValue="mihome"  alwaysUseInDialogHeightCalc="true">
+
+                <Description>Use Two-Factor Authentication (Mi Home / Xiaomi account)?</Description>
+            </Field>
+
+            <Field id="dreameLoginDevice"
+                   type="button"
+                   tooltip="Attempt cloud login with current username/password/country"
+                   visibleBindingId="dreameTwoFAEnabled"
+                   visibleBindingValue="true">
+                <Label>Login Dreame / Mi Cloud</Label>
+                <Title>Login Dreame / Mi Cloud</Title>
+                <CallbackMethod>dreame_loginAccount</CallbackMethod>
+            </Field>
+
+            <Field id="dreameVerificationCode"
+                   type="textfield"
+                   tooltip="Enter the 2FA verification code sent by Xiaomi / Mi"
+                   default=""
+                   visibleBindingId="dreameTwoFAEnabled"
+                   visibleBindingValue="true">
+                <Label>Verification Code:</Label>
+            </Field>
+
+            <Field id="dreameSubmitCode"
+                   type="button"
+                   tooltip="Submit the 2FA verification code"
+                   visibleBindingId="dreameTwoFAEnabled"
+                   visibleBindingValue="true">
+                <Title>Submit</Title>
+                <Label>Submit Code</Label>
+                <CallbackMethod>dreame_submitCode</CallbackMethod>
+            </Field>
+
+            <Field id="dreameLoginInfo"
+                   type="textfield"
+                   tooltip="Result of last cloud login or 2FA attempt"
+                   default=""
+                   readonly="true"
+                   visibleBindingId="dreameTwoFAEnabled"
+                   visibleBindingValue="true">>
+                <Label>Cloud Login Status:</Label>
+            </Field>
+
+    <Field id="sep44aa" type="separator"/>
+
+            <Field id="enableMappingUpdates" type="checkbox" defaultValue="false">
+                <Label>Enable map updates while cleaning</Label>
+            </Field>
+                <Field id="description_1" type="label" fontColor="blue" fontSize="small"  alwaysUseInDialogHeightCalc="true">
+        <Label>When enabled and vacuum active, the plugin will periodically request map data
+(about every 15 seconds) while the vacuum is actively cleaning.
+Saved to Pictures Directory
+        </Label>
+    </Field>
+
+
+    <Field id="sep44aa2" type="separator"/>
+
+            <Field id="relayOnAction" type="menu" defaultValue="start_clean">
+                <Label>On Device On:</Label>
+                <Description>What should happen when this device is turned ON (e.g., from a relay / external system)?</Description>
+                <List>
+                    <Option value="start_clean">Start Cleaning</Option>
+                    <Option value="shortcut">Run Shortcut (select below)</Option>
+                </List>
+            </Field>
+
+            <Field id="relayOnShortcut" type="menu"
+                   visibleBindingId="relayOnAction" visibleBindingValue="shortcut" alwaysUseInDialogHeightCalc="true">
+                <Label>On: Shortcut to run:</Label>
+                <List class="self" method="shortcut_menu" dynamicReload="true"/>
+            </Field>
+
+            <Field id="relayOffAction" type="menu" defaultValue="dock" alwaysUseInDialogHeightCalc="true">
+                <Label>On Device Off:</Label>
+                <Description>What should happen when this device is turned OFF?</Description>
+                <List>
+                    <Option value="dock">Return to Dock</Option>
+                    <Option value="pause">Pause Cleaning</Option>
+                    <Option value="stop">Stop Cleaning</Option>
+                    <Option value="shortcut">Run Shortcut (select below)</Option>
+                </List>
+            </Field>
+
+            <Field id="relayOffShortcut" type="menu"
+                   visibleBindingId="relayOffAction" visibleBindingValue="shortcut" alwaysUseInDialogHeightCalc="true">
+                <Label>Off: Shortcut to run:</Label>
+                <List class="self" method="shortcut_menu" dynamicReload="true"/>
+            </Field>
+ <Field id="description_4" type="label" fontColor="blue" fontSize="small"  alwaysUseInDialogHeightCalc="true">
+        <Label>These options control what happens when On, Off and Toggle is called by Indigo
+or a external device such as Alexa or Home App via (HomekitLink plugin)
+        </Label>
+    </Field>
+
+        </ConfigUI>
+         <States>
+               <State id="status">
+                <ValueType>String</ValueType>
+                <TriggerLabel>Status</TriggerLabel>
+                <ControlPageLabel>Status</ControlPageLabel>
+            </State>
+            <State id="battery">
+                <ValueType>Number</ValueType>
+                <TriggerLabel>Battery %</TriggerLabel>
+                <ControlPageLabel>Battery %</ControlPageLabel>
+            </State>
+            <State id="fan_speed">
+                <ValueType>String</ValueType>
+                <TriggerLabel>Fan Speed</TriggerLabel>
+                <ControlPageLabel>Fan Speed</ControlPageLabel>
+            </State>
+            <State id="area_cleaned_m2">
+                <ValueType>Number</ValueType>
+                <TriggerLabel>Area Cleaned (m²)</TriggerLabel>
+                <ControlPageLabel>Area Cleaned (m²)</ControlPageLabel>
+            </State>
+            <State id="duration_min">
+                <ValueType>Number</ValueType>
+                <TriggerLabel>Cleaning Duration (min)</TriggerLabel>
+                <ControlPageLabel>Duration (min)</ControlPageLabel>
+            </State>
+             <State id="shortcuts">
+                <ValueType>String</ValueType>
+                <TriggerLabel>Shortcuts</TriggerLabel>
+                <ControlPageLabel>Shortcuts</ControlPageLabel>
+            </State>
+            <State id="charging">
+                <ValueType>Boolean</ValueType>
+                <TriggerLabel>Charging</TriggerLabel>
+                <ControlPageLabel>Charging</ControlPageLabel>
+            </State>
+            <State id="error_text">
+                <ValueType>String</ValueType>
+                <TriggerLabel>Error Text</TriggerLabel>
+                <ControlPageLabel>Error</ControlPageLabel>
+            </State>
+            <State id="last_update">
+                <ValueType>String</ValueType>
+                <TriggerLabel>Last Update</TriggerLabel>
+                <ControlPageLabel>Last Update</ControlPageLabel>
+            </State>
+
+            <!-- Extended robot / dock / task states -->
+            <State id="robot_state">
+                <ValueType>String</ValueType>
+                <TriggerLabel>Robot State</TriggerLabel>
+                <ControlPageLabel>Robot State</ControlPageLabel>
+            </State>
+            <State id="robot_state_detail">
+                <ValueType>String</ValueType>
+                <TriggerLabel>Robot State Detail</TriggerLabel>
+                <ControlPageLabel>Robot State Detail</ControlPageLabel>
+            </State>
+            <State id="station_state">
+                <ValueType>String</ValueType>
+                <TriggerLabel>Base / Station State</TriggerLabel>
+                <ControlPageLabel>Base State</ControlPageLabel>
+            </State>
+            <State id="task_status">
+                <ValueType>String</ValueType>
+                <TriggerLabel>Task Status</TriggerLabel>
+                <ControlPageLabel>Task Status</ControlPageLabel>
+            </State>
+            <State id="cleaning_mode">
+                <ValueType>String</ValueType>
+                <TriggerLabel>Cleaning Mode</TriggerLabel>
+                <ControlPageLabel>Cleaning Mode</ControlPageLabel>
+            </State>
+
+            <!-- Cleaning parameters -->
+            <State id="water_volume">
+                <ValueType>Integer</ValueType>
+                <TriggerLabel>Water Level</TriggerLabel>
+                <ControlPageLabel>Water Level</ControlPageLabel>
+            </State>
+            <State id="mop_wetness_level">
+                <ValueType>Integer</ValueType>
+                <TriggerLabel>Mop Wetness</TriggerLabel>
+                <ControlPageLabel>Mop Wetness</ControlPageLabel>
+            </State>
+
+            <!-- NEW: numeric cleaning progress % -->
+            <State id="cleaning_progress">
+                <ValueType>Integer</ValueType>
+                <TriggerLabel>Cleaning Progress %</TriggerLabel>
+                <ControlPageLabel>Cleaning Progress %</ControlPageLabel>
+            </State>
+
+            <!-- Base / self-wash / drying -->
+            <State id="self_wash_base_status">
+                <ValueType>String</ValueType>
+                <TriggerLabel>Base Status</TriggerLabel>
+                <ControlPageLabel>Base Status</ControlPageLabel>
+            </State>
+            <State id="drying_progress">
+                <ValueType>Integer</ValueType>
+                <TriggerLabel>Drying Progress %</TriggerLabel>
+                <ControlPageLabel>Drying Progress %</ControlPageLabel>
+            </State>
+
+            <!-- NEW: auto-empty / drainage status -->
+            <State id="auto_empty_status">
+                <ValueType>String</ValueType>
+                <TriggerLabel>Auto-empty Status</TriggerLabel>
+                <ControlPageLabel>Auto-empty Status</ControlPageLabel>
+            </State>
+            <State id="station_drainage_status">
+                <ValueType>String</ValueType>
+                <TriggerLabel>Drainage Status</TriggerLabel>
+                <ControlPageLabel>Drainage Status</ControlPageLabel>
+            </State>
+             <State id="combined_status">
+                <ValueType>String</ValueType>
+                <TriggerLabel>Combined Status</TriggerLabel>
+                <ControlPageLabel>Combined Status</ControlPageLabel>
+            </State>
+            <State id="water_temperature">
+                <ValueType>String</ValueType>
+                <TriggerLabel>Water Temperature</TriggerLabel>
+                <ControlPageLabel>Water Temperature</ControlPageLabel>
+            </State>
+            <!-- Consumables / health -->
+            <State id="main_brush_left">
+                <ValueType>Integer</ValueType>
+                <TriggerLabel>Main Brush Left %</TriggerLabel>
+                <ControlPageLabel>Main Brush Left %</ControlPageLabel>
+            </State>
+            <State id="side_brush_left">
+                <ValueType>Integer</ValueType>
+                <TriggerLabel>Side Brush Left %</TriggerLabel>
+                <ControlPageLabel>Side Brush Left %</ControlPageLabel>
+            </State>
+            <State id="filter_left">
+                <ValueType>Integer</ValueType>
+                <TriggerLabel>Filter Left %</TriggerLabel>
+                <ControlPageLabel>Filter Left %</ControlPageLabel>
+            </State>
+            <State id="dirty_water_tank_left">
+                <ValueType>Integer</ValueType>
+                <TriggerLabel>Dirty Water Tank Left %</TriggerLabel>
+                <ControlPageLabel>Dirty Water Tank Left %</ControlPageLabel>
+            </State>
+            <State id="scale_inhibitor_left">
+                <ValueType>Integer</ValueType>
+                <TriggerLabel>Scale Inhibitor Left %</TriggerLabel>
+                <ControlPageLabel>Scale Inhibitor Left %</ControlPageLabel>
+            </State>
+
+            <!-- AI / mapping capability summary -->
+            <State id="ai_obstacle_detection">
+                <ValueType>Boolean</ValueType>
+                <TriggerLabel>AI Obstacle Detection</TriggerLabel>
+                <ControlPageLabel>AI Obstacle Detection</ControlPageLabel>
+            </State>
+            <State id="ai_pet_detection">
+                <ValueType>Boolean</ValueType>
+                <TriggerLabel>AI Pet Detection</TriggerLabel>
+                <ControlPageLabel>AI Pet Detection</ControlPageLabel>
+            </State>
+
+            <!-- Map / room metadata -->
+            <State id="map_list">
+                <ValueType>String</ValueType>
+                <TriggerLabel>Map List</TriggerLabel>
+                <ControlPageLabel>Map List</ControlPageLabel>
+            </State>
+
+            <State id="current_map_id">
+                <ValueType>Integer</ValueType>
+                <TriggerLabel>Current Map ID</TriggerLabel>
+                <ControlPageLabel>Current Map ID</ControlPageLabel>
+            </State>
+            <State id="multi_floor_map">
+                <ValueType>Boolean</ValueType>
+                <TriggerLabel>Multi-Floor Map Enabled</TriggerLabel>
+                <ControlPageLabel>Multi-Floor Map Enabled</ControlPageLabel>
+            </State>
+            <State id="mapping_updates_enabled">
+                <ValueType>Boolean</ValueType>
+                <TriggerLabel>Mapping Updates Enabled</TriggerLabel>
+                <ControlPageLabel>Mapping Updates Enabled</ControlPageLabel>
+            </State>
+            <!-- NEW: map / room summary -->
+            <State id="selected_map">
+                <ValueType>String</ValueType>
+                <TriggerLabel>Selected Map Name</TriggerLabel>
+                <ControlPageLabel>Selected Map</ControlPageLabel>
+            </State>
+            <State id="room_list">
+                <ValueType>String</ValueType>
+                <TriggerLabel>Rooms</TriggerLabel>
+                <ControlPageLabel>Rooms</ControlPageLabel>
+            </State>
+            <State id="current_room">
+                <ValueType>String</ValueType>
+                <TriggerLabel>Current Room</TriggerLabel>
+                <ControlPageLabel>Current Room</ControlPageLabel>
+            </State>
+            <State id="current_segment_id">
+                <ValueType>Integer</ValueType>
+                <TriggerLabel>Current Segment ID</TriggerLabel>
+                <ControlPageLabel>Current Segment ID</ControlPageLabel>
+            </State>
+            <State id="cleaning_sequence">
+                <ValueType>String</ValueType>
+                <TriggerLabel>Cleaning Sequence</TriggerLabel>
+                <ControlPageLabel>Cleaning Sequence</ControlPageLabel>
+            </State>
+
+            <!-- NEW: raw vacuum_state (mopping, sweeping, etc.) -->
+            <State id="vacuum_state">
+                <ValueType>String</ValueType>
+                <TriggerLabel>Vacuum State</TriggerLabel>
+                <ControlPageLabel>Vacuum State</ControlPageLabel>
+            </State>
+         </States>
+        <UiDisplayStateId>status</UiDisplayStateId>
+    </Device>
+</Devices>
