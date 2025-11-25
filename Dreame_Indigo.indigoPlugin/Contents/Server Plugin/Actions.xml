@@ -224,4 +224,43 @@
         </ConfigUI>
     </Action>
 
+<Action id="test3DBasic" deviceFilter="self">
+    <Name>🧪 Test 3D Basic</Name>
+    <CallbackMethod>test_3d_basic</CallbackMethod>
+</Action>
+<Action id="debugDeviceStructure" deviceFilter="self">
+    <Name>🔍 Debug Device Structure</Name>
+    <CallbackMethod>debug_device_structure</CallbackMethod>
+</Action>
+    <!-- Add these actions to your existing Devices.xml -->
+<Action id="save3DMapSnapshot" deviceFilter="self">
+    <Name>📸 Save 3D Map Snapshot</Name>
+    <ConfigUI>
+        <Field id="visualizationType" type="menu" defaultValue="height_map">
+            <Label>3D Visualization Type:</Label>
+            <List>
+                <Option value="height_map">Height Map (Terrain)</Option>
+                <Option value="surface">Surface View</Option>
+                <Option value="wireframe">Wireframe</Option>
+            </List>
+        </Field>
+    </ConfigUI>
+    <CallbackMethod>action_save_3d_map_snapshot</CallbackMethod>
+</Action>
+
+<Action id="save3DMapHTML" deviceFilter="self">
+    <Name>🌐 Save Interactive 3D Map HTML</Name>
+    <ConfigUI>
+        <Field id="visualizationType" type="menu" defaultValue="height_map">
+            <Label>3D Visualization Type:</Label>
+            <List>
+                <Option value="height_map">Height Map (Interactive)</Option>
+                <Option value="surface">Surface View</Option>
+            </List>
+        </Field>
+    </ConfigUI>
+    <CallbackMethod>action_save_3d_map_html</CallbackMethod>
+</Action>
+
+
 </Actions>

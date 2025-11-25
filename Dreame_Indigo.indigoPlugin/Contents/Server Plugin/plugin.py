@@ -22,6 +22,8 @@ from dreame.protocol import DreameVacuumProtocol, DeviceException
 # Add near top of file with other imports
 from dreame_camera import DreameCameraHelper, DreameCameraConfig
 # add with other imports at the top
+import numpy as np
+
 
 import logging, traceback
 from dreame.protocol import DreameVacuumProtocol
@@ -203,8 +205,379 @@ class Plugin(indigo.PluginBase):
         self.logger.info(f"{'Python:':<24}{sys.version.replace(os.linesep, ' ')}")
         self.logger.info("{0:=^100}".format("🤖🤖🤖 End Initializing 🤖🤖🤖"))
 
-    ########################################
-   # TESTING
+        # Add 3D mapping helper
+        try:
+            from dreame.map3d import DreameCameraHelper3D, DreameCamera3DConfig, check_3d_dependencies
+            self.logger.info("Successfully imported 3D map components")
+            import numpy as np
+            # Check dependencies
+            deps = check_3d_dependencies()
+            self.logger.info(f"3D Dependencies: {deps}")
+
+            if not deps.get('matplotlib') and not deps.get('plotly'):
+                self.logger.error("Neither matplotlib nor plotly available for 3D rendering")
+                self._update_status(dev, "3D dependencies not available")
+                return
+
+        except ImportError as ie:
+            self.logger.error(f"Failed to import 3D map components: {ie}")
+            self._update_status(dev, "3D map components not available")
+            return
+    ## 3d Mapping ###
+    #############################
+
+    async def _async_save_3d_map_html(self, dev, visualization_type="height_map"):
+        """Async method to save 3D map HTML"""
+        try:
+            self.logger.info(f"Starting async 3D map HTML generation for {dev.name}")
+
+            client = self._clients.get(dev.id)
+            if not client:
+                raise Exception("Device client not found")
+
+            device = getattr(client, "_device", None)
+            if not device:
+                raise Exception("Device not found")
+
+            # Import 3D components
+            from dreame.map3d import DreameCameraHelper3D, DreameCamera3DConfig, check_3d_dependencies
+
+            # Check dependencies
+            deps = check_3d_dependencies()
+            if not deps['plotly']:
+                raise Exception("Plotly dependency not available for 3D HTML generation")
+
+            # Create 3D config and helper
+            config = DreameCamera3DConfig()
+            config.visualization_type = visualization_type
+            helper = DreameCameraHelper3D(device, config)
+
+            # Get pictures directory
+            import os
+            pictures_dir = os.path.expanduser("~/Pictures")
+
+            # Generate 3D HTML
+            result = helper.save_3d_html_to_file(
+                base_dir=pictures_dir,
+                dev_id=dev.id,
+                prefix="DreameMap3D",
+                visualization_type=visualization_type
+            )
+
+            if result:
+                return f"3D map HTML saved: {result}"
+            else:
+                raise Exception(f"3D map HTML failed: no data ({visualization_type})")
+
+        except Exception as ex:
+            self.logger.error(f"Error in async 3D map HTML: {ex}")
+            raise Exception(f"3D map HTML failed: {ex}")
+    # Add these methods to your Plugin class, following the exact pattern of _async_save_map_snapshot
+    def debug_device_structure(self, plugin_action, dev):
+        """Debug method to understand device structure"""
+        try:
+
+            client = self._clients.get(dev.id)
+            if client:
+                device = getattr(client, "_device", None)
+                if device:
+                    self.logger.info(f"=== Device Debug Info ===")
+                    self.logger.info(f"Device type: {type(device)}")
+                    self.logger.info(f"Device attributes: {[attr for attr in dir(device) if not attr.startswith('_')]}")
+
+                    # Check for map-related attributes
+                    map_attrs = [attr for attr in dir(device) if 'map' in attr.lower()]
+                    self.logger.info(f"Map-related attributes: {map_attrs}")
+
+                    # Check what the device.map property contains
+                    if hasattr(device, 'map'):
+                        self.logger.info(f"device.map type: {type(device.map)}")
+                        self.logger.info(
+                            f"device.map attributes: {[attr for attr in dir(device.map) if not attr.startswith('_')]}")
+
+                    # Look for the map manager in different places
+                    for attr_name in ['map_manager', '_map_manager', 'map', '_map']:
+                        if hasattr(device, attr_name):
+                            attr = getattr(device, attr_name)
+                            self.logger.info(f"Found {attr_name}: {type(attr)}")
+                else:
+                    self.logger.error("No device found")
+            else:
+                self.logger.error("No client found")
+
+        except Exception as ex:
+            self.logger.error(f"Debug failed: {ex}")
+
+    async def _async_save_3d_map_snapshot(self, dev: indigo.Device, visualization_type: str = "height_map"):
+        """
+        Save a 3D map snapshot to ~/Pictures using the same pattern as 2D maps.
+        """
+        # First check if we can import the 3D components
+        try:
+            from dreame.map3d import DreameCameraHelper3D, DreameCamera3DConfig, check_3d_dependencies
+            self.logger.info("Successfully imported 3D map components")
+
+            # Check dependencies
+            deps = check_3d_dependencies()
+            self.logger.info(f"3D Dependencies: {deps}")
+
+            if not deps.get('matplotlib') and not deps.get('plotly'):
+                self.logger.error("Neither matplotlib nor plotly available for 3D rendering")
+                self._update_status(dev, "3D dependencies not available")
+                return
+
+        except ImportError as ie:
+            self.logger.error(f"Failed to import 3D map components: {ie}")
+            self._update_status(dev, "3D map components not available")
+            return
+
+        client = self._clients.get(dev.id)
+        if not client:
+            self._update_status(dev, "Not connected")
+            return
+
+        device: DreameVacuumDevice | None = getattr(client, "_device", None)
+        if device is None:
+            self._update_status(dev, "No Dreame device object")
+            return
+
+        try:
+            cfg = DreameCamera3DConfig(
+                color_scheme=None,
+                icon_set=None,
+                low_resolution=False,
+                square=False,
+                map_index=0,
+                wifi_map=False,
+                wall_height=250.0,
+            )
+            helper = DreameCameraHelper3D(device, cfg)
+
+            import os
+            pictures_dir = os.path.expanduser("~/Pictures")
+            full_path = helper.save_3d_snapshot_to_file(
+                base_dir=pictures_dir,
+                dev_id=dev.id,
+                prefix="DreameMap3D",
+                visualization_type=visualization_type,
+            )
+
+            if not full_path:
+                msg = f"3D map snapshot failed: no image data ({visualization_type})"
+                self._update_status(dev, msg)
+                return
+
+            self.logger.debug(f"Saved 3D {visualization_type} map snapshot for '{dev.name}' to {full_path}")
+
+        except Exception as exc:
+            self.logger.error(f"3D map snapshot failed for '{dev.name}': {exc}")
+
+    def test_3d_basic(self, plugin_action, dev):
+        """Basic test of 3D components"""
+        try:
+            # Test import
+            self.logger.info("=== Testing 3D Import ===")
+            from dreame.map3d import DreameCameraHelper3D, DreameCamera3DConfig, check_3d_dependencies
+            self.logger.info("✓ Import successful")
+
+            # Test dependencies
+            deps = check_3d_dependencies()
+            self.logger.info(f"Dependencies: {deps}")
+
+            # Test basic file creation with a simple test
+            import os
+            import time
+            pictures_dir = os.path.expanduser("~/Pictures")
+            test_file = os.path.join(pictures_dir, f"test_3d_{int(time.time())}.txt")
+
+            with open(test_file, 'w') as f:
+                f.write("3D Test File")
+
+            self.logger.info(f"✓ File creation test successful: {test_file}")
+
+            # Test device access
+            client = self._clients.get(dev.id)
+            if client:
+                device = getattr(client, "_device", None)
+                if device:
+                    self.logger.info(f"✓ Device access: {type(device)}")
+
+                    # Test 3D helper creation
+                    config = DreameCamera3DConfig()
+                    helper = DreameCameraHelper3D(device, config)
+                    self.logger.info(f"✓ Helper created: {type(helper)}")
+
+                    # Test direct method call with detailed debugging
+                    self.logger.info("=== Testing save_3d_html_to_file directly ===")
+                    result = helper.save_3d_html_to_file(
+                        base_dir=pictures_dir,
+                        dev_id=dev.id,
+                        prefix="TEST3D",
+                        visualization_type="height_map"
+                    )
+                    self.logger.info(f"Direct call result: {result}")
+                else:
+                    self.logger.error("✗ No device found")
+            else:
+                self.logger.error("✗ No client found")
+
+        except Exception as ex:
+            self.logger.error(f"Test failed: {ex}")
+            import traceback
+            self.logger.error(f"Traceback: {traceback.format_exc()}")
+
+
+
+    def save_3d_html_to_file(self, base_dir: str, dev_id: str, prefix: str = "DreameMap3D",
+                             visualization_type: str = "height_map") :
+        """Save interactive 3D map HTML to file"""
+        try:
+            # Force logging to work by using print as backup
+            print(f"3D DEBUG: Starting save_3d_html_to_file")
+            _LOGGER.info(f"=== Creating 3D HTML: {visualization_type} ===")
+
+            if not PLOTLY_AVAILABLE:
+                print(f"3D DEBUG: Plotly not available")
+                _LOGGER.error("Plotly not available for 3D HTML")
+                return None
+
+            print(f"3D DEBUG: Plotly is available")
+
+            # Get map data from device's map manager
+            print(f"3D DEBUG: About to get map data")
+            map_data = self._get_map_data_from_manager()
+            print(f"3D DEBUG: Got map data: {map_data}")
+
+            if not map_data:
+                print(f"3D DEBUG: No map data, creating demo")
+                _LOGGER.error("No map data available - creating demo visualization")
+                # Create demo instead of returning None
+                height_data = self._create_demo_height_data()
+                map_data = None  # We'll handle this in figure creation
+            else:
+                print(f"3D DEBUG: Creating height data from map")
+                height_data = self._create_height_data_from_map(map_data)
+
+            print(f"3D DEBUG: Height data shape: {height_data.shape}")
+
+            # Generate plotly figure
+            print(f"3D DEBUG: Creating plotly figure")
+            fig = self._create_plotly_figure_safe(height_data, map_data, visualization_type)
+            if not fig:
+                print(f"3D DEBUG: Failed to create figure")
+                _LOGGER.error("Failed to create plotly figure")
+                return None
+
+            print(f"3D DEBUG: Figure created successfully")
+
+            # Create filename
+            import os
+            timestamp = time.strftime("%Y%m%d_%H%M%S")
+            filename = f"{prefix}_{dev_id}_{visualization_type}_{timestamp}.html"
+            full_path = os.path.join(base_dir, filename)
+
+            print(f"3D DEBUG: Saving to {full_path}")
+
+            # Save HTML with UTF-8 encoding
+            html_content = fig.to_html(include_plotlyjs=True)
+            with open(full_path, 'w', encoding='utf-8') as f:
+                f.write(html_content)
+
+            print(f"3D DEBUG: File saved successfully")
+            _LOGGER.info(f"=== 3D HTML saved to: {full_path} ===")
+            return full_path
+
+        except Exception as ex:
+            print(f"3D DEBUG ERROR: {ex}")
+            _LOGGER.error(f"=== Error saving 3D HTML: {ex} ===")
+            import traceback
+            print(f"3D DEBUG TRACEBACK: {traceback.format_exc()}")
+            _LOGGER.error(f"Traceback: {traceback.format_exc()}")
+            return None
+
+    def _create_plotly_figure_safe(self, height_data: np.ndarray, map_data, visualization_type: str):
+        """Safe version of plotly figure creation"""
+        try:
+            print(f"3D DEBUG: Creating plotly figure safely")
+
+            fig = go.Figure()
+
+            if height_data.size == 0:
+                print(f"3D DEBUG: Empty height data")
+                return None
+
+            x = list(range(height_data.shape[1]))
+            y = list(range(height_data.shape[0]))
+            z = height_data
+
+            print(f"3D DEBUG: Adding surface trace")
+
+            # Add height surface
+            fig.add_trace(go.Surface(
+                x=x,
+                y=y,
+                z=z,
+                colorscale='Earth',
+                opacity=0.8,
+                name='Floor/Walls'
+            ))
+
+            print(f"3D DEBUG: Surface added")
+
+            # Add a simple robot marker
+            dims = height_data.shape
+            fig.add_trace(go.Scatter3d(
+                x=[dims[1] // 2], y=[dims[0] // 2], z=[20],
+                mode='markers',
+                marker=dict(size=8, color='red'),
+                name='Robot'
+            ))
+
+            print(f"3D DEBUG: Robot marker added")
+
+            # Simple layout
+            fig.update_layout(
+                title=f'Dreame 3D Map - {visualization_type.title()}',
+                scene=dict(
+                    xaxis_title='X',
+                    yaxis_title='Y',
+                    zaxis_title='Height',
+                    camera=dict(eye=dict(x=1.5, y=1.5, z=1.0))
+                )
+            )
+
+            print(f"3D DEBUG: Layout configured")
+            return fig
+
+        except Exception as ex:
+            print(f"3D DEBUG: Error in figure creation: {ex}")
+            import traceback
+            print(f"3D DEBUG: Figure traceback: {traceback.format_exc()}")
+            return None
+    # Add action handlers following your existing pattern
+    def action_save_3d_map_snapshot(self, plugin_action, dev):
+        """Action to save 3D map snapshot"""
+        if dev.deviceTypeId != "dreame_vacuum" or not self._event_loop:
+            return
+        visualization_type = plugin_action.props.get("visualizationType", "height_map")
+        self.logger.info(f"3D map snapshot ({visualization_type}) requested for '{dev.name}'")
+        asyncio.run_coroutine_threadsafe(
+            self._async_save_3d_map_snapshot(dev, visualization_type),
+            self._event_loop
+        )
+
+    def action_save_3d_map_html(self, plugin_action, dev):
+        """Action to save 3D map HTML"""
+        if dev.deviceTypeId != "dreame_vacuum" or not self._event_loop:
+            return
+        visualization_type = plugin_action.props.get("visualizationType", "height_map")
+        self.logger.info(f"3D map HTML ({visualization_type}) requested for '{dev.name}'")
+        asyncio.run_coroutine_threadsafe(
+            self._async_save_3d_map_html(dev, visualization_type),
+            self._event_loop
+        )
+
+    # TESTING
     ## 2FA
 
     def _update_dreame_login_info(
@@ -1131,6 +1504,12 @@ class Plugin(indigo.PluginBase):
                     self._async_start_clean(dev),
                     self._event_loop,
                 )
+
+        elif action.deviceAction == "generate3DMap":
+            self.handle_generate_3d_map_action(action, dev)
+
+        elif action.deviceAction == "save3DMapHTML":
+            self.handle_save_3d_map_html_action(action, dev)
 
     # Actions.xml
     ########################################
