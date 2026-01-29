@@ -4,6 +4,11 @@ try:
     import indigo
 except ImportError:
     pass
+installation_output = ""
+
+from auto_installer import install_requirements_manual
+installation_output = install_requirements_manual()
+
 
 import asyncio
 import threading
@@ -100,7 +105,7 @@ class Plugin(indigo.PluginBase):
         **kwargs,
     ) -> None:
         super().__init__(plugin_id, plugin_display_name, plugin_version, plugin_prefs, **kwargs)
-
+        global installation_output
         # Async
         self._event_loop: asyncio.AbstractEventLoop | None = None
         self._async_thread: threading.Thread | None = None
@@ -191,6 +196,9 @@ class Plugin(indigo.PluginBase):
             self.logger.debug("Attached dreame_client, dreame, miio, urllib3, requests loggers to handlers")
         except Exception as exc:
             self.logger.exception(exc)
+        if installation_output !="":
+            self.packages_installed = True
+            self.logger.debug(f"Libaries Installed Updated:\n{installation_output}")
 
         # Header
         self.logger.info("")
