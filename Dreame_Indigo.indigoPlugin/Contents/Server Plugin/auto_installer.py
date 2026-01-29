@@ -40,8 +40,6 @@ def install_requirements_manual():
 
     installation_output = f"Installing requirements Libraries into '{install_dir}'\n"
 
-
-
     indigo.server.log("Processing requirements_manual.txt (manual Library install).")
     indigo.server.log(installation_output)
     indigo.server.log("... Please Wait ....")
@@ -52,9 +50,6 @@ def install_requirements_manual():
         sys.exit(1)
 
     install_dir.mkdir(parents=True, exist_ok=True)
-
-    # Prefer invoking pip via the running interpreter
-    python_executable = sys.executable
 
     # Inject sysroot so clang can find stdlib.h when Indigo/launchd env is minimal
     try:
