@@ -2456,14 +2456,13 @@ class Plugin(indigo.PluginBase):
         )
 
         # 4) Choose device: use dreame_device_id if set, else first entry
+        # 4) Choose device: use dreame_device_id if set, else first entry
         wanted_did = (dev.pluginProps.get("dreame_device_id") or "").strip() or None
-        chosen_key = None
         chosen_device = None
 
         if wanted_did:
-            for key, d in supported_devices.items():
+            for d in supported_devices:  # supported_devices is now a list[dict]
                 if str(d.get("did")) == str(wanted_did):
-                    chosen_key = key
                     chosen_device = d
                     break
             if not chosen_device:
@@ -2473,9 +2472,10 @@ class Plugin(indigo.PluginBase):
                 )
 
         if chosen_device is None:
-            # First device
-            chosen_key = next(iter(supported_devices.keys()))
-            chosen_device = supported_devices[chosen_key]
+            chosen_device = supported_devices[0]
+
+        # optional: keep a useful display label for logging
+        chosen_key = f"{chosen_device.get('name', 'Unknown')} - {chosen_device.get('model', '')}".strip(" -")
 
         self.logger.debug(
             f"Chosen cloud device for '{dev.name}': key={chosen_key!r}, did={chosen_device.get('did')!r}, "
