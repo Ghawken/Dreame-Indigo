@@ -231,19 +231,19 @@ or a external device such as Alexa or Home App via (HomekitLink plugin)
 
             <!-- Cleaning parameters -->
             <State id="water_volume">
-                <ValueType>Integer</ValueType>
+                <ValueType>Number</ValueType>
                 <TriggerLabel>Water Level</TriggerLabel>
                 <ControlPageLabel>Water Level</ControlPageLabel>
             </State>
             <State id="mop_wetness_level">
-                <ValueType>Integer</ValueType>
+                <ValueType>Number</ValueType>
                 <TriggerLabel>Mop Wetness</TriggerLabel>
                 <ControlPageLabel>Mop Wetness</ControlPageLabel>
             </State>
 
             <!-- NEW: numeric cleaning progress % -->
             <State id="cleaning_progress">
-                <ValueType>Integer</ValueType>
+                <ValueType>Number</ValueType>
                 <TriggerLabel>Cleaning Progress %</TriggerLabel>
                 <ControlPageLabel>Cleaning Progress %</ControlPageLabel>
             </State>
@@ -255,7 +255,7 @@ or a external device such as Alexa or Home App via (HomekitLink plugin)
                 <ControlPageLabel>Base Status</ControlPageLabel>
             </State>
             <State id="drying_progress">
-                <ValueType>Integer</ValueType>
+                <ValueType>Number</ValueType>
                 <TriggerLabel>Drying Progress %</TriggerLabel>
                 <ControlPageLabel>Drying Progress %</ControlPageLabel>
             </State>
@@ -283,12 +283,12 @@ or a external device such as Alexa or Home App via (HomekitLink plugin)
             </State>
             <!-- Consumables / health -->
             <State id="main_brush_left">
-                <ValueType>Integer</ValueType>
+                <ValueType>Number</ValueType>
                 <TriggerLabel>Main Brush Left %</TriggerLabel>
                 <ControlPageLabel>Main Brush Left %</ControlPageLabel>
             </State>
             <State id="side_brush_left">
-                <ValueType>Integer</ValueType>
+                <ValueType>Number</ValueType>
                 <TriggerLabel>Side Brush Left %</TriggerLabel>
                 <ControlPageLabel>Side Brush Left %</ControlPageLabel>
             </State>
@@ -298,12 +298,12 @@ or a external device such as Alexa or Home App via (HomekitLink plugin)
                 <ControlPageLabel>Filter Left %</ControlPageLabel>
             </State>
             <State id="dirty_water_tank_left">
-                <ValueType>Integer</ValueType>
+                <ValueType>Number</ValueType>
                 <TriggerLabel>Dirty Water Tank Left %</TriggerLabel>
                 <ControlPageLabel>Dirty Water Tank Left %</ControlPageLabel>
             </State>
             <State id="scale_inhibitor_left">
-                <ValueType>Integer</ValueType>
+                <ValueType>Number</ValueType>
                 <TriggerLabel>Scale Inhibitor Left %</TriggerLabel>
                 <ControlPageLabel>Scale Inhibitor Left %</ControlPageLabel>
             </State>
@@ -328,7 +328,7 @@ or a external device such as Alexa or Home App via (HomekitLink plugin)
             </State>
 
             <State id="current_map_id">
-                <ValueType>Integer</ValueType>
+                <ValueType>Number</ValueType>
                 <TriggerLabel>Current Map ID</TriggerLabel>
                 <ControlPageLabel>Current Map ID</ControlPageLabel>
             </State>
@@ -375,7 +375,125 @@ or a external device such as Alexa or Home App via (HomekitLink plugin)
                 <TriggerLabel>Vacuum State</TriggerLabel>
                 <ControlPageLabel>Vacuum State</ControlPageLabel>
             </State>
+
+            <State id="total_cleaned_area">
+                <ValueType>Number</ValueType>
+                <TriggerLabel>Total Cleaned Area</TriggerLabel>
+                <ControlPageLabel>Total Cleaned Area</ControlPageLabel>
+            </State>
+            <State id="total_cleaning_time">
+                <ValueType>Integer</ValueType>
+                <TriggerLabel>Total Cleaning Time</TriggerLabel>
+                <ControlPageLabel>Total Cleaning Time</ControlPageLabel>
+            </State>
+            <State id="cleaning_count">
+                <ValueType>Number</ValueType>
+                <TriggerLabel>Cleaning Count</TriggerLabel>
+                <ControlPageLabel>Cleaning Count</ControlPageLabel>
+            </State>
+
+            <!--  Current run counters (often update live) -->
+            <State id="cleaned_area">
+                <ValueType>Number</ValueType>
+                <TriggerLabel>Cleaned Area</TriggerLabel>
+                <ControlPageLabel>Cleaned Area</ControlPageLabel>
+            </State>
+            <State id="cleaning_time">
+                <ValueType>Integer</ValueType>
+                <TriggerLabel>Cleaning Time</TriggerLabel>
+                <ControlPageLabel>Cleaning Time</ControlPageLabel>
+            </State>
+
+            <!-- Useful configuration / mode states -->
+            <State id="suction_level">
+                <ValueType>String</ValueType>
+                <TriggerLabel>Suction Level</TriggerLabel>
+                <ControlPageLabel>Suction Level</ControlPageLabel>
+            </State>
+            <State id="washing_mode">
+                <ValueType>String</ValueType>
+                <TriggerLabel>Washing Mode</TriggerLabel>
+                <ControlPageLabel>Washing Mode</ControlPageLabel>
+            </State>
+            <State id="mop_pad_humidity">
+                <ValueType>String</ValueType>
+                <TriggerLabel>Mop Pad Humidity</TriggerLabel>
+                <ControlPageLabel>Mop Pad Humidity</ControlPageLabel>
+            </State>
+            <State id="auto_empty_mode">
+                <ValueType>String</ValueType>
+                <TriggerLabel>Auto-Empty Mode</TriggerLabel>
+                <ControlPageLabel>Auto-Empty Mode</ControlPageLabel>
+            </State>
+
+            <!--  Station / tank / bag status (high-signal “why won’t it run”) -->
+            <State id="clean_water_tank_status">
+                <ValueType>String</ValueType>
+                <TriggerLabel>Clean Water Tank</TriggerLabel>
+                <ControlPageLabel>Clean Water Tank</ControlPageLabel>
+            </State>
+            <State id="dirty_water_tank_status">
+                <ValueType>String</ValueType>
+                <TriggerLabel>Dirty Water Tank</TriggerLabel>
+                <ControlPageLabel>Dirty Water Tank</ControlPageLabel>
+            </State>
+            <State id="dust_bag_status">
+                <ValueType>String</ValueType>
+                <TriggerLabel>Dust Bag Status</TriggerLabel>
+                <ControlPageLabel>Dust Bag Status</ControlPageLabel>
+            </State>
+            <State id="detergent_status">
+                <ValueType>String</ValueType>
+                <TriggerLabel>Detergent Status</TriggerLabel>
+                <ControlPageLabel>Detergent Status</ControlPageLabel>
+            </State>
+
+            <!-- Scheduling / DND / Off-peak  -->
+            <State id="scheduled_clean">
+                <ValueType>Boolean</ValueType>
+                <TriggerLabel>Scheduled Clean</TriggerLabel>
+                <ControlPageLabel>Scheduled Clean</ControlPageLabel>
+            </State>
+            <State id="dnd_enabled">
+                <ValueType>Boolean</ValueType>
+                <TriggerLabel>DND Enabled</TriggerLabel>
+                <ControlPageLabel>DND Enabled</ControlPageLabel>
+            </State>
+            <State id="dnd_start">
+                <ValueType>String</ValueType>
+                <TriggerLabel>DND Start</TriggerLabel>
+                <ControlPageLabel>DND Start</ControlPageLabel>
+            </State>
+            <State id="dnd_end">
+                <ValueType>String</ValueType>
+                <TriggerLabel>DND End</TriggerLabel>
+                <ControlPageLabel>DND End</ControlPageLabel>
+            </State>
+            <State id="off_peak_charging">
+                <ValueType>Boolean</ValueType>
+                <TriggerLabel>Off-Peak Charging</TriggerLabel>
+                <ControlPageLabel>Off-Peak Charging</ControlPageLabel>
+            </State>
+            <State id="off_peak_charging_start">
+                <ValueType>String</ValueType>
+                <TriggerLabel>Off-Peak Start</TriggerLabel>
+                <ControlPageLabel>Off-Peak Start</ControlPageLabel>
+            </State>
+            <State id="off_peak_charging_end">
+                <ValueType>String</ValueType>
+                <TriggerLabel>Off-Peak End</TriggerLabel>
+                <ControlPageLabel>Off-Peak End</ControlPageLabel>
+            </State>
+
+            <!--  Drying setting -->
+            <State id="drying_time">
+                <ValueType>Number</ValueType>
+                <TriggerLabel>Drying Time</TriggerLabel>
+                <ControlPageLabel>Drying Time</ControlPageLabel>
+            </State>
+
+
          </States>
-        <UiDisplayStateId>status</UiDisplayStateId>
+        <UiDisplayStateId>combined_status</UiDisplayStateId>
     </Device>
 </Devices>

@@ -1630,6 +1630,76 @@ class Plugin(indigo.PluginBase):
             try:
                 attrs = getattr(s, "attributes", None) or {}
 
+                def _set_int(key, v):
+                    try:
+                        if v is not None:
+                            kv.append({"key": key, "value": int(v)})
+                    except Exception:
+                        pass
+
+                def _set_num(key, v):
+                    try:
+                        if v is not None:
+                            kv.append({"key": key, "value": float(v)})
+                    except Exception:
+                        pass
+
+                def _set_str(key, v):
+                    try:
+                        if v is not None:
+                            s = str(v).strip()
+                            if s != "":
+                                kv.append({"key": key, "value": s})
+                    except Exception:
+                        pass
+
+                def _set_bool(key, v):
+                    try:
+                        if v is not None:
+                            kv.append({"key": key, "value": bool(v)})
+                    except Exception:
+                        pass
+
+                # Lifetime totals
+                _set_num("total_cleaned_area", attrs.get("total_cleaned_area"))
+                _set_int("total_cleaning_time", attrs.get("total_cleaning_time"))
+                _set_int("cleaning_count", attrs.get("cleaning_count"))
+
+                # Current run counters
+                _set_num("cleaned_area", attrs.get("cleaned_area"))
+                _set_int("cleaning_time", attrs.get("cleaning_time"))
+
+                # Useful config / mode states
+                _set_str("suction_level", attrs.get("suction_level"))
+                _set_str("washing_mode", attrs.get("washing_mode"))
+                _set_str("mop_pad_humidity", attrs.get("mop_pad_humidity"))
+                _set_str("auto_empty_mode", attrs.get("auto_empty_mode"))
+
+                # Station / tank / consumables status
+                _set_str("clean_water_tank_status", attrs.get("clean_water_tank_status"))
+                _set_str("dirty_water_tank_status", attrs.get("dirty_water_tank_status"))
+                _set_str("dust_bag_status", attrs.get("dust_bag_status"))
+                _set_str("detergent_status", attrs.get("detergent_status"))
+
+                # Scheduling / DND / off-peak
+                _set_bool("scheduled_clean", attrs.get("scheduled_clean"))
+
+                # DND is a nested dict like {1: {'enabled': True, 'start': '21:00', 'end': '08:00'}}
+                dnd = attrs.get("dnd")
+                if isinstance(dnd, dict) and dnd:
+                    # pick first profile
+                    profile = next(iter(dnd.values()))
+                    if isinstance(profile, dict):
+                        _set_bool("dnd_enabled", profile.get("enabled"))
+                        _set_str("dnd_start", profile.get("start"))
+                        _set_str("dnd_end", profile.get("end"))
+
+                _set_bool("off_peak_charging", attrs.get("off_peak_charging"))
+                _set_str("off_peak_charging_start", attrs.get("off_peak_charging_start"))
+                _set_str("off_peak_charging_end", attrs.get("off_peak_charging_end"))
+
+                # Drying setting
+                _set_int("drying_time", attrs.get("drying_time"))
                 # Robot state / detail
                 raw_state = getattr(s, "status", None) or getattr(s, "state", None)
                 # raw_state can be an Enum or a string; attributes['status'] is already human-readable too
