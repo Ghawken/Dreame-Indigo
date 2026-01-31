@@ -1554,45 +1554,70 @@ class Plugin(indigo.PluginBase):
         kv.append({"key": "last_update", "value": datetime.now().strftime("%Y-%m-%d %H:%M:%S")})
 
         # --- On/off summary for relay-like integrations ---
-        # Treat any active cleaning OR washing/drying/station work as "on".
-        attrs = getattr(getattr(client, "_device", None), "status", None)
-        attrs = getattr(attrs, "attributes", None) or {}
+        # --- On/off summary for relay-like integrations ---
+        # Goal: reflect "actively doing work" (cleaning/returning/station activity), not configured modes.
+        # Important: many attrs are *capabilities/config* (e.g. self_clean=True, auto_drying=True)
+        # and must NOT be used to decide ON/OFF.
 
-        vacuum_state = str(attrs.get("vacuum_state", "") or "").lower()
+        device = getattr(client, "_device", None)
+        s = getattr(device, "status", None)
+        attrs = getattr(s, "attributes", None) or {}
+
+        # Primary truth flags (these are live runtime flags on your model)
+        running = bool(attrs.get("running", False))
+        started = bool(attrs.get("started", False))
+        paused = bool(attrs.get("paused", False))
+        returning = bool(attrs.get("returning", False))
+
         seg_clean = bool(attrs.get("segment_cleaning", False))
         zone_clean = bool(attrs.get("zone_cleaning", False))
         spot_clean = bool(attrs.get("spot_cleaning", False))
-        returning = bool(attrs.get("returning", False))
-        washing = bool(attrs.get("washing", False)) or bool(attrs.get("self_clean", False))
+
+        # Station activity flags (live activity)
+        washing = bool(attrs.get("washing", False))
         drying = bool(attrs.get("drying", False))
         station_cleaning = bool(attrs.get("station_cleaning", False))
 
-        base_on = status.state.upper() in (
-            "CLEANING",
-            "AUTO_CLEANING",
-            "AUTO_CLEAN",
-            "ZONE_CLEANING",
-            "SEGMENT_CLEANING",
-            "BACK_HOME",
+        # Docked/charging/sleeping indicators (for safe OFF when idle)
+        docked = bool(attrs.get("docked", False))
+        charging_attr = attrs.get("charging", None)  # may be bool or missing
+        charging_attr = bool(charging_attr) if charging_attr is not None else None
+
+        state_text = str(attrs.get("status", "") or "").strip().lower()  # e.g. "Sleeping"
+        vacuum_state = str(attrs.get("vacuum_state", "") or "").strip().lower()  # e.g. "charging_completed"
+        is_charging = bool(getattr(status, "is_charging", False))
+
+        err = str(attrs.get("error", "") or "").strip().lower()  # e.g. "Water tank" -> "water tank"
+        has_error = (vacuum_state == "error") or (err not in ("", "no error", "none", "ok"))
+        # Define what counts as active work
+        cleaning_work = seg_clean or zone_clean or spot_clean
+        station_work = washing or station_cleaning
+
+        # Some devices report returning while not "running" - treat returning as active
+        # Only count strong evidence of work as "active"
+        active = running or returning or cleaning_work or station_work
+
+        # Hard OFF conditions: if clearly idle/docked/sleeping AND not active
+        inactive_text = state_text in ("sleeping", "idle", "docked", "charging", "standby", "offline")
+        inactive_vacuum_state = vacuum_state in (
+            "charging_completed",
+            "charging",
+            "charge_completed",
+            "completed_charging",
         )
 
-        # Also treat vacuum_state mopping/washing/drying as "on"
-        vs = vacuum_state
-        vs_wash_or_mop = any(k in vs for k in ("mopp", "wash", "dry"))
+        dockedish = docked or inactive_text or inactive_vacuum_state or is_charging or (charging_attr is True)
+        if has_error and not running and not returning and not cleaning_work and not station_work:
+            is_on = False
+        elif dockedish and not active:
+            is_on = False
+        else:
+            # Otherwise ON only if genuinely active
+            is_on = bool(active)
+        self.logger.debug(
+            f"Relay calc: active={active}, dockedish={dockedish}, is_on={is_on}, state_text='{state_text}', vacuum_state='{vacuum_state}'")
 
-        is_on = (
-            base_on
-            or seg_clean
-            or zone_clean
-            or spot_clean
-            or returning
-            or washing
-            or drying
-            or station_cleaning
-            or vs_wash_or_mop
-        )
-
-        kv.append({"key": "onOffState", "value": bool(is_on)})
+        kv.append({"key": "onOffState", "value": is_on})
 
         # --- Extended states from DreameVacuumDevice.status ---
         device = getattr(client, "_device", None)
@@ -1914,6 +1939,13 @@ class Plugin(indigo.PluginBase):
             vs = (str(vacuum_state).strip().lower() if vacuum_state else "")
             st = (str(attr_status_text).strip().lower() if attr_status_text else "")
 
+            err = str(attrs.get("error", "") or "").strip()
+            if vs == "error" or (err and err.lower() not in ("no error", "none", "ok")):
+                combined = f"Error: {err}" if err else "Error"
+                kv.append({"key": "combined_status", "value": combined})
+                # Skip the rest of the verb logic
+                raise StopIteration
+
             # Examples from const.py: SWEEPING, MOPPING, SWEEPING_AND_MOPPING, RETURNING, CHARGING, WASHING, DRYING, etc.
             if "mopp" in vs or "mopping" in st:
                 # Could also differentiate "Sweeping and mopping"
@@ -1973,6 +2005,8 @@ class Plugin(indigo.PluginBase):
             if combined is not None:
                 kv.append({"key": "combined_status", "value": combined})
 
+        except StopIteration:
+            pass
         except Exception as exc:
             self.logger.debug(f"Combined status build failed for '{dev.name}': {exc}")
 
