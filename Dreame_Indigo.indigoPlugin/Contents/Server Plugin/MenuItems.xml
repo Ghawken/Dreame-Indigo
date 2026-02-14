@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<MenuItems>
+  <MenuItem id="installLibraries">
+    <Name>Manual Install Libraries</Name>
+    <CallbackMethod>manualLibraryInstall</CallbackMethod>
+  </MenuItem>
+</MenuItems>

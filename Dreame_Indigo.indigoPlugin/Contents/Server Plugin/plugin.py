@@ -7,7 +7,7 @@ except ImportError:
 installation_output = ""
 
 from auto_installer import install_requirements_manual
-installation_output = install_requirements_manual()
+#installation_output = install_requirements_manual()
 
 
 import asyncio
@@ -233,6 +233,15 @@ class Plugin(indigo.PluginBase):
             dev.replacePluginPropsOnServer(new_props)
         except Exception as exc:
             self.logger.debug(f"_update_dreame_login_info failed for '{dev.name}': {exc}")
+
+
+    def manualLibraryInstall(self):
+        """
+        Toggle debug on/off.
+        """
+        self.logger.info("Manual Library Install Started")
+        installation_output = install_requirements_manual()
+        self.logger.info(f"Manual Library Install Finished:\n{installation_output}")
 
     def _get_menu_value(self, raw):
         """

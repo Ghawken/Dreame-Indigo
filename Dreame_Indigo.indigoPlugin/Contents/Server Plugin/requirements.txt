@@ -1,1 +1,9 @@
 six
+aiohttp
+pillow
+numpy
+pybase64
+pycryptodome
+python-miio
+mini-racer
+paho-mqtt
